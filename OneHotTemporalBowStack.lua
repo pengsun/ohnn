@@ -25,7 +25,6 @@ function OneHotTemporalBowStack:__init(p, padVocabInd, opt)
 
         self.padVocabInd = padVocabInd or
             error('no padVocabInd: must specify a padding vocabulary index')
-        assert(self.padVocabInd >= 1 and self.padVocabInd <= V)
 
         opt = opt or {}
     end
