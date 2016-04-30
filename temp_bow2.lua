@@ -1,6 +1,3 @@
---[[
-th -e "require'ohnn.temp_bow'"
---]]
 require 'ohnn'
 
 

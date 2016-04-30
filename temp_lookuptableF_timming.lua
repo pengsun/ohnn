@@ -1,6 +1,3 @@
---[[
-th -e "require'ohnn.temp_lookuptable2_timming'"
---]]
 require'cunn'
 require'cudnn'
 require'ohnn'
@@ -52,7 +49,7 @@ timing_module(input, m1)
 output1 = m1:forward(input)
 
 -- lookuptable2
-m2 = ohnn.LookupTable2(V,C):cuda()
+m2 = ohnn.LookupTableF(V,C):cuda()
 m2.weight:copy(weight)
 m2:setPadding(padVocabInd)
 print('ohnn.lookuptable2')

@@ -15,7 +15,7 @@ print('input = ')
 print(input)
 
 -- module
-m = ohnn.LookupTable2(V, C):cuda()
+m = ohnn.LookupTableF(V, C):cuda()
 m.weight:fill(1)
 
 -- fprop
