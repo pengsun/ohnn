@@ -43,4 +43,8 @@ INSTALL(
 INSTALL( # timing scripts
   DIRECTORY
   "timing"
-  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/ohnn")  
+  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/ohnn")
+INSTALL( # scripts
+  DIRECTORY
+  "temp"
+  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/ohnn") 
