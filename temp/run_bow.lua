@@ -1,6 +1,3 @@
---[[
-th -e "require'ohnn.temp_bow'"
---]]
 require 'ohnn'
 
 B, M, V, C = 2, 4, 6, 2

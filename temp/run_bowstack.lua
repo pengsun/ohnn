@@ -1,9 +1,7 @@
---[[
-th -e "require'ohnn.temp_bowstack'"
---]]
 require 'ohnn'
 
 B, M, V, C = 2, 4, 6, 2
+p = 3
 padVocabInd = 1
 
 -- input
@@ -15,8 +13,7 @@ print('input = ')
 print(input)
 
 -- module
-m = ohnn.LookupTableF(V, C):cuda()
-m.weight:fill(1)
+m = ohnn.OneHotTemporalBowStack(p, padVocabInd):cuda()
 
 -- fprop
 output = m:forward(input)
