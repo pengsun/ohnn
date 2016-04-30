@@ -40,3 +40,7 @@ INSTALL(
   FILES
   ${luasrc}
   DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/ohnn")
+INSTALL( # timing scripts
+  DIRECTORY
+  "timing"
+  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/ohnn")  

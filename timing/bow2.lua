@@ -1,6 +1,3 @@
---[[
-th -e "require'ohnn.temp_bow_timming2'"
---]]
 require'cudnn'
 require'onehot-temp-conv'
 require 'ohnn'

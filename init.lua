@@ -3,6 +3,6 @@ ohnn = {}
 ohnn.C = require 'ohnn.ffi'
 
 require('ohnn.OneHotTemporalBowStack')
-require('ohnn.LookupTable2')
+require('ohnn.LookupTableF')
 
 return ohnn
