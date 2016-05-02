@@ -6,7 +6,7 @@
 
 /// Helper
 // TODO: make it a template fun and move to a separate file
-__global__ void OHNN_CudaLookupTable2_updateOutput_kernel(
+__global__ void OHNN_CudaLookupTableF_updateOutput_kernel(
 		float *inputInd, float *weight, int weightStride, int B, int M, int V, int C,
 		float *output, int outputStride)
 {
@@ -27,7 +27,7 @@ __global__ void OHNN_CudaLookupTable2_updateOutput_kernel(
 
 /// Expose
 extern "C"
-void OHNN_CudaLookupTable2_updateOutput(
+void OHNN_CudaLookupTableF_updateOutput(
 		THCState *state,
 		// In
         THCudaTensor *input,
@@ -59,7 +59,7 @@ void OHNN_CudaLookupTable2_updateOutput(
 	cudaStream_t stream = THCState_getCurrentStream(state);
 	dim3 grid(DIV_CEIL(C, 32), DIV_CEIL(B*M, 32));
 	dim3 block(32, 32);
-	OHNN_CudaLookupTable2_updateOutput_kernel<<<grid, block, 0, stream>>>(
+	OHNN_CudaLookupTableF_updateOutput_kernel<<<grid, block, 0, stream>>>(
 			THCudaTensor_data(state, input),
 			THCudaTensor_data(state, weight), weightStride,
 			B, M, V, C,

@@ -14,7 +14,7 @@ void OHNN_CudaOneHotTemporalBowStack_updateOutput(
         double padVocabInd,
         // Out
         THCudaTensor *output);
-void OHNN_CudaLookupTable2_updateOutput(
+void OHNN_CudaLookupTableF_updateOutput(
 		THCState *state,
 		// In
         THCudaTensor *input,

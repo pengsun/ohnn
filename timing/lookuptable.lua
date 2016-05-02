@@ -19,6 +19,7 @@ input = torch.LongTensor(B, MP):random(V):cuda()
 
 
 function timing_module(input, m)
+    cutorch.synchronize()
     local time
 
     -- fprop
@@ -26,8 +27,9 @@ function timing_module(input, m)
     time = torch.tic()
     for i = 1, nloop do
         m:forward(input)
+        cutorch.synchronize()
     end
-    cutorch.synchronize()
+
     time = torch.toc(time)
     print(torch.type(m) .. ' fprop time ' .. time/nloop)
 

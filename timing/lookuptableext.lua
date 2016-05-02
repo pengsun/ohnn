@@ -25,6 +25,7 @@ input = torch.LongTensor(B, MP):random(V):cuda()
 weight = torch.CudaTensor(V, C):normal()
 
 function timing_module(input, m)
+    cutorch.synchronize()
     local time
 
     -- fprop
@@ -43,16 +44,14 @@ end
 m1 = nn.LookupTable(V, C):cuda()
 m1.weight:copy(weight)
 m1:setPadding(padVocabInd)
-print('lookuptable')
 --print(m)
 timing_module(input, m1)
 output1 = m1:forward(input)
 
--- lookuptable2
-m2 = ohnn.LookupTableF(V,C):cuda()
+-- LookupTableExt
+m2 = ohnn.LookupTableExt(V,C):cuda()
 m2.weight:copy(weight)
 m2:setPadding(padVocabInd)
-print('ohnn.lookuptable2')
 timing_module(input, m2)
 output2 = m2:forward(input)
 

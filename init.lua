@@ -2,7 +2,11 @@ require 'cunn'
 ohnn = {}
 ohnn.C = require 'ohnn.ffi'
 
+require('ohnn.OneHotNarrowExt')
+require('ohnn.LookupTableExt')
+require('ohnn.TemporalAddBias')
+
 require('ohnn.OneHotTemporalBowStack')
-require('ohnn.LookupTableF')
+require('ohnn.OneHotTemporalSeqConvolution')
 
 return ohnn

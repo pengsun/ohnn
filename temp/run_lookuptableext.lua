@@ -12,7 +12,7 @@ print('input = ')
 print(input)
 
 -- module
-m = ohnn.LookupTableF(V, C):cuda()
+m = ohnn.LookupTableExt(V, C):cuda()
 m.weight:fill(1)
 
 -- fprop
