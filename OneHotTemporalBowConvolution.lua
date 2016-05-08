@@ -114,6 +114,7 @@ end
 
 function OneHotTemporalBowConvolution:zeroVocabIndPadWeight()
     local ms = self:findModules('ohnn.LookupTableExt')
+    assert(#ms > 0)
     for _, m in ipairs(ms) do
         local vocabIndPad = m.paddingValue or error('currupted code... no paddingValue')
         m.weight:select(1, vocabIndPad):fill(0)

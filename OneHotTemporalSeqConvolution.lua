@@ -1,13 +1,14 @@
 --- One-hot Temporal Sequential Convolution classdef
 -- Tensor size flow:
 -- B, M (,V)
---     V, C, kW
--- B, M-kW+1, C
+--     V, C, p
+-- B, M-p+1, C
 -- where
 --   B = batch size
 --   M = nInputFrame = sequence length
 --   V = inputFrameSize = vocabulary size
 --   C = outputFrameSize = "embedding" size
+--   p = region size = convolution kernel width
 --
 -- TODO: shortcut for internal module getter
 
@@ -17,23 +18,24 @@ require'nn'
 -- main methods
 local OneHotTemporalSeqConvolution, parent = torch.class('ohnn.OneHotTemporalSeqConvolution', 'nn.Sequential')
 
-function OneHotTemporalSeqConvolution:__init(V, C, kW, opt)
+function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
     parent.__init(self)
 
     local function check_arg()
-        assert(V>0 and C>0 and kW>0)
+        assert(V>0 and C>0 and p >0)
         self.V = V
         self.C = C
-        self.kW = kW
+        self.kW = p
 
         opt = opt or {}
         self.hasBias = opt.hasBias or false -- default no Bias
+        self.vocabIndPad = opt.vocabIndPad or 1
     end
     check_arg()
 
     -- submodules: narrow + lookuptable
     local submds = {}
-    for i = 1, kW do
+    for i = 1, p do
         local offset = i
         local length = 1 -- set it as (M - kW + 1) at runtime
         submds[i] = nn.Sequential()
@@ -46,7 +48,7 @@ function OneHotTemporalSeqConvolution:__init(V, C, kW, opt)
 
     -- multiplexer: send input to each submodule
     local ct = nn.ConcatTable()
-    for i = 1, kW do
+    for i = 1, p do
         ct:add(submds[i])
     end
 
@@ -63,21 +65,23 @@ function OneHotTemporalSeqConvolution:__init(V, C, kW, opt)
     -- B, M-kW+1, C
 end
 
-function OneHotTemporalSeqConvolution:setPadding(pv)
-    local ms = self:findModules('nn.LookupTableExt')
+function OneHotTemporalSeqConvolution:setVocabIndPad(pv)
+    self.vocabIndPad = vip
+
+    local ms = self:findModules('ohnn.LookupTableExt')
+    assert(#ms > 0)
     for _, m in ipairs(ms) do
-        m:setPadding(pv)
+        m:setPadding(vip)
     end
     return self
 end
 
-function OneHotTemporalSeqConvolution:zeroPaddingWeight()
-    local ms = self:findModules('nn.LookupTableExt')
+function OneHotTemporalSeqConvolution:zeroVocabIndPadWeight()
+    local ms = self:findModules('ohnn.LookupTableExt')
+    assert(#ms > 0)
     for _, m in ipairs(ms) do
-        local paddingInd = m.paddingValue
-        if paddingInd > 0 then
-            m.weight:select(1, paddingInd):fill(0)
-        end
+        local vocabIndPad = m.paddingValue or error('currupted code... no paddingValue')
+        m.weight:select(1, vocabIndPad):fill(0)
     end
     return self
 end

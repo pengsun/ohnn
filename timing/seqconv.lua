@@ -8,7 +8,7 @@ C = 500
 M = 95 -- seq length
 p = 3
 B = 100 -- #batches
-padVocabInd = 1
+vocabIndPad = 1
 
 nloop = 3
 
@@ -48,11 +48,11 @@ end
 
 -- new
 m1 = ohnn.OneHotTemporalSeqConvolution(V, C, p, {hasBias = true}):cuda()
-m1:setPadding(padVocabInd)
+m1:setVocabIndPad(vocabIndPad)
 
 -- old
 m2 = nn.OneHotTemporalConvolution(V, C, p, {hasBias = true}):cuda()
-m2:setPadding(padVocabInd)
+m2:setPadding(vocabIndPad)
 
 -- common weights bias
 local function enforce_param(m1, m2)
