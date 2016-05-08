@@ -1,8 +1,8 @@
---- One-hot Temporal Sequential Convolution classdef
+--- One-hot Temporal Bag-Of-Word Convolution classdef
 -- Tensor size flow:
 -- B, M (,V)
---     V, C, kW
--- B, M-kW+1, C
+--     V, C
+-- B, M, C
 -- where
 --   B = batch size
 --   M = nInputFrame = sequence length
@@ -15,89 +15,113 @@ require'torch'
 require'nn'
 
 -- main methods
-local OneHotTemporalSeqConvolution, parent = torch.class('ohnn.OneHotTemporalSeqConvolution', 'nn.Sequential')
+local OneHotTemporalBowConvolution, parent = torch.class(
+    'ohnn.OneHotTemporalBowConvolution',
+    'nn.Sequential'
+)
 
-function OneHotTemporalSeqConvolution:__init(V, C, kW, opt)
+function OneHotTemporalBowConvolution:__init(V, C, p, opt)
     parent.__init(self)
 
     local function check_arg()
-        assert(V>0 and C>0 and kW>0)
+        assert(V>0 and C>0 and p >0)
         self.V = V
         self.C = C
-        self.kW = kW
+        self.p = p
+        assert(p %2 == 1, "region size (kernel width) p must be an even number!")
 
         opt = opt or {}
-        self.hasBias = opt.hasBias or false -- default no Bias
+        self.hasBias = opt.hasBias or true
+        self.vocabIndPad = opt.vocabIndPad or 1
+        self.isStrictBOW = opt.isStrictBOW or false
     end
     check_arg()
 
-    -- submodules: narrow + lookuptable
-    local submds = {}
-    for i = 1, kW do
-        local offset = i
-        local length = 1 -- set it as (M - kW + 1) at runtime
-        submds[i] = nn.Sequential()
-            -- B, M (,V)
-            :add(ohnn.OneHotNarrowExt(V, 2,offset,length))
-            -- B, M-kW+1 (,V)
-            :add(ohnn.LookupTableExt(V,C))
-            -- B, M-kW+1, C
+    -- which kind: Bag-Of-Word or Sum-Of-Word
+    if true == self.isStrictBOW then
+        self:makeBagOfWord()
+    else
+        self:makeSumOfWord()
     end
 
-    -- multiplexer: send input to each submodule
-    local ct = nn.ConcatTable()
-    for i = 1, kW do
-        ct:add(submds[i])
-    end
+    -- vocabulary index padding
+    self:setVocabIndPad(self.vocabIndPad)
+end
 
-    -- the container to be returned
-    local inplace = true
+function OneHotTemporalBowConvolution:makeBagOfWord()
+    local indUnknown = self.vocabIndPad
+    local p = self.p
+    local V = self.V
+    local C = self.C
+
     -- B, M (,V)
-    self:add(ct)
-    -- {B, M-kW+1, C}, {B, M-kW+1, C}, ...
-    self:add(nn.CAddTable(inplace))
-    -- B, M-kW+1, C
-    if self.hasBias == true then
-        self:add(ohnn.TemporalAddBias(C, inplace))
+    self:add( ohnn.OneHotTemporalBowStack(p, indUnknown) )
+    -- B, Mp (,V)
+    self:add( ohnn.LookupTableExt(V, C) )
+    -- B, Mp, HU
+    self:add( nn.Unsqueeze(1, 2) )
+    -- B, 1, Mp, HU
+    self:add( cudnn.SpatialAveragePooling(1,p, 1,p, 0,0) )
+    -- B, 1, M, HU
+    self:add( nn.MulConstant(p, true) )
+    self:add( nn.Squeeze(1, 3) )
+    -- B, M, HU
+    if true == self.hasBias then
+        self:add( ohnn.TemporalAddBias(C) )
     end
-    -- B, M-kW+1, C
+
 end
 
-function OneHotTemporalSeqConvolution:setPadding(pv)
-    local ms = self:findModules('nn.LookupTableExt')
-    for _, m in ipairs(ms) do
-        m:setPadding(pv)
+function OneHotTemporalBowConvolution:makeSumOfWord()
+    local p = self.p
+    local V = self.V
+    local C = self.C
+    local pad = (p -1)/2
+
+    -- B, M (,V)
+    self:add( ohnn.LookupTableExt(V, C) )
+    -- B, M, C
+    self:add( nn.Unsqueeze(1, 2) )
+    -- B, 1, M, C
+    self:add( cudnn.SpatialAveragePooling(1,p, 1,1, 0,pad) )
+    self:add( nn.MulConstant(p, true) )
+    self:add( nn.Squeeze(1, 3) )
+    -- B, M, C
+    if true == self.hasBias then
+        self:add( ohnn.TemporalAddBias(C) )
     end
-    return self
+    -- B, M, C
 end
 
-function OneHotTemporalSeqConvolution:zeroPaddingWeight()
-    local ms = self:findModules('nn.LookupTableExt')
-    for _, m in ipairs(ms) do
-        local paddingInd = m.paddingValue
-        if paddingInd > 0 then
-            m.weight:select(1, paddingInd):fill(0)
-        end
-    end
-    return self
-end
-
-function OneHotTemporalSeqConvolution:updateOutput(input)
+function OneHotTemporalBowConvolution:updateOutput(input)
     assert(input:dim()==2, "input size must be dim 2: B, M")
-
-    -- need to the seq length for current input batch
-    local M = input:size(2)
-    assert(M >= self.kW,
-        ("kernel size %d > seq length %d, failed"):format(self.kW, M)
-    )
-    self:_reset_seq_length(M)
-
     return parent.updateOutput(self, input)
 end
 
---[[ Okay with default backward(), which calls each module's backward() ]]--
+-- Okay with default backward(), which calls each module's backward()
 
-function OneHotTemporalSeqConvolution:shouldUpdateGradInput(flag)
+-- additional methods
+function OneHotTemporalBowConvolution:setVocabIndPad(vip)
+    self.vocabIndPad = vip
+
+    local ms = self:findModules('ohnn.LookupTableExt')
+    assert(#ms > 0)
+    for _, m in ipairs(ms) do
+        m:setPadding(vip)
+    end
+    return self
+end
+
+function OneHotTemporalBowConvolution:zeroVocabIndPadWeight()
+    local ms = self:findModules('ohnn.LookupTableExt')
+    for _, m in ipairs(ms) do
+        local vocabIndPad = m.paddingValue or error('currupted code... no paddingValue')
+        m.weight:select(1, vocabIndPad):fill(0)
+    end
+    return self
+end
+
+function OneHotTemporalBowConvolution:shouldUpdateGradInput(flag)
     assert(flag==true or flag==false, "flag must be boolean!")
 
     -- set each submoule
@@ -106,25 +130,11 @@ function OneHotTemporalSeqConvolution:shouldUpdateGradInput(flag)
             md:shouldUpdateGradInput(flag)
         end
     end
-    local ms = self:findModules('ohnn.OneHotNarrowExt')
-    local mms = self:findModules('ohnn.LookupTableExt')
-    set_each_flag(ms)
-    set_each_flag(mms)
+    set_each_flag( self:findModules('ohnn.LookupTableExt') )
 end
 
-function OneHotTemporalSeqConvolution:__tostring__()
+function OneHotTemporalBowConvolution:__tostring__()
     local s = string.format('%s(%d -> %d, %d',
-        torch.type(self),  self.V, self.C, self.kW)
+        torch.type(self),  self.V, self.C, self.p)
     return s .. ')'
-end
-
--- helpers
-function OneHotTemporalSeqConvolution:_reset_seq_length(M)
-    local contable = self.modules[1]
-    local kW = #contable.modules
-    for i = 1, kW do
-        -- reset nn.Narrow length
-        local length = M -kW + 1
-        contable.modules[i].modules[1].length = length
-    end
 end

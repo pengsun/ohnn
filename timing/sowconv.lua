@@ -8,7 +8,7 @@ C = 500
 M = 95 -- seq length
 p = 3
 B = 100 -- #batches
-padVocabInd = 1
+vocabIndPad = 7
 
 nloop = 3
 
@@ -17,7 +17,7 @@ input = torch.LongTensor(B, M):random(V):cuda()
 weight = torch.CudaTensor(V, C):normal()
 
 -- gradOutput
-gOutput = torch.CudaTensor(B, M-p+1, C):normal()
+gOutput = torch.CudaTensor(B, M, C):normal()
 
 function timing_module(input, gOutput, m)
     local time
@@ -47,12 +47,48 @@ function timing_module(input, gOutput, m)
 end
 
 -- new
-m1 = ohnn.OneHotTemporalSeqConvolution(V, C, p, {hasBias = true}):cuda()
-m1:setPadding(padVocabInd)
+m1 = ohnn.OneHotTemporalBowConvolution(V, C, p,
+    {hasBias = true, isStrictBow = false}
+)
+m1:cuda()
+m1:setVocabIndPad(vocabIndPad)
 
 -- old
-m2 = nn.OneHotTemporalConvolution(V, C, p, {hasBias = true}):cuda()
-m2:setPadding(padVocabInd)
+local function make_old(V, C, p)
+    local function get_pad()
+        assert(p %2 == 1)
+        return (p -1)/2
+    end
+    local pad = get_pad(p)
+    local stride = 1
+
+    --local m = nn.OneHotTemporalConvolution(V, C, 1, {hasBias = false})
+    --m:setPadding(vocabIndPad):zeroPaddingWeight()
+
+    local m = nn.LookupTable(V, C)
+    m:setPadding(VocabIndPad)
+
+--    local m = ohnn.LookupTableExt(V, C)
+--    m:setPadding(VocabIndPad)
+
+    local md = nn.Sequential()
+    -- B, M (,V)
+    md:add( m )
+    -- B, M, HU
+    md:add( nn.Unsqueeze(1, 2) )
+    -- B, 1, M, HU
+    md:add( cudnn.SpatialAveragePooling(1,p, 1,stride, 0,pad) )
+    md:add( nn.MulConstant(p, true) )
+    md:add( nn.Squeeze(1, 3) )
+    -- B, M, HU
+    md:add( nn.TemporalAddBias(C) )
+    -- B, M, HU
+
+    md:cuda()
+
+    return md
+end
+m2 = make_old(V, C, p)
 
 -- common weights bias
 local function enforce_param(m1, m2)
@@ -61,7 +97,7 @@ local function enforce_param(m1, m2)
     assert(p1:nElement() == p2:nElement())
     p1:copy(p2)
 end
-enforce_param(m1, m2)
+enforce_param(m2, m1)
 cutorch.synchronize()
 
 -- do the timing
