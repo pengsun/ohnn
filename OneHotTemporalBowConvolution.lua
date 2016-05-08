@@ -125,6 +125,10 @@ end
 function OneHotTemporalBowConvolution:shouldUpdateGradInput(flag)
     assert(flag==true or flag==false, "flag must be boolean!")
 
+    if true == flag then
+        error('updateGradInput() not yet implemented for bow conv...')
+    end
+
     -- set each submoule
     local function set_each_flag(mods)
         for _, md in ipairs(mods) do

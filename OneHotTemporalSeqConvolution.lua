@@ -65,6 +65,22 @@ function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
     -- B, M-kW+1, C
 end
 
+function OneHotTemporalSeqConvolution:updateOutput(input)
+    assert(input:dim()==2, "input size must be dim 2: B, M")
+
+    -- need to the seq length for current input batch
+    local M = input:size(2)
+    assert(M >= self.kW,
+        ("kernel size %d > seq length %d, failed"):format(self.kW, M)
+    )
+    self:_reset_seq_length(M)
+
+    return parent.updateOutput(self, input)
+end
+
+-- Okay with default backward(), which calls each module's backward()
+
+-- additional methods
 function OneHotTemporalSeqConvolution:setVocabIndPad(pv)
     self.vocabIndPad = vip
 
@@ -85,21 +101,6 @@ function OneHotTemporalSeqConvolution:zeroVocabIndPadWeight()
     end
     return self
 end
-
-function OneHotTemporalSeqConvolution:updateOutput(input)
-    assert(input:dim()==2, "input size must be dim 2: B, M")
-
-    -- need to the seq length for current input batch
-    local M = input:size(2)
-    assert(M >= self.kW,
-        ("kernel size %d > seq length %d, failed"):format(self.kW, M)
-    )
-    self:_reset_seq_length(M)
-
-    return parent.updateOutput(self, input)
-end
-
---[[ Okay with default backward(), which calls each module's backward() ]]--
 
 function OneHotTemporalSeqConvolution:shouldUpdateGradInput(flag)
     assert(flag==true or flag==false, "flag must be boolean!")
@@ -122,7 +123,7 @@ function OneHotTemporalSeqConvolution:__tostring__()
     return s .. ')'
 end
 
--- helpers
+-- priviate
 function OneHotTemporalSeqConvolution:_reset_seq_length(M)
     local contable = self.modules[1]
     local kW = #contable.modules

@@ -5,17 +5,20 @@ B = 200 -- batch size
 M = 45 -- sequence length (#words)
 V = 12333 -- inputFrameSize (vocabulary size)
 C = 300 -- outputFrameSize (#output feature maps, or embedding size)
-kW = 5 -- convolution kernel size (width)
+p = 5 -- convolution kernel size (width)
+vocabPadInd = 1 -- the first word in vocabulary is seen as padding word
 
 -- inputs: the one-hot vector as index in set {1,2,...,V}. size: B, M
 inputs = torch.LongTensor(B, M):random(1,V):cuda()
 
--- the 1d conv module
-tf = ohnn.OneHotTemporalSeqConvolution(V, C, kW, {hasBias = true}):cuda()
+-- the 1d seq conv module
+m = ohnn.OneHotTemporalSeqConvolution(V, C, p,
+    {hasBias = true, vocabPadInd = vocabPadInd}
+):cuda()
 
 -- outputs: the dense tensor. size: B, M-kW+1, C
-outputs = tf:forward(inputs)
+outputs = m:forward(inputs)
 
 -- back prop: the gradients w.r.t. parameters
 gradOutputs = outputs:clone():normal()
-tf:backward(inputs, gradOutputs)
+m:backward(inputs, gradOutputs)
