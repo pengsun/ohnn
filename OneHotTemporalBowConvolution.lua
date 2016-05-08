@@ -33,12 +33,12 @@ function OneHotTemporalBowConvolution:__init(V, C, p, opt)
         opt = opt or {}
         self.hasBias = opt.hasBias or true
         self.vocabIndPad = opt.vocabIndPad or 1
-        self.isStrictBOW = opt.isStrictBOW or false
+        self.isStrictBow = opt.isStrictBow or false
     end
     check_arg()
 
     -- which kind: Bag-Of-Word or Sum-Of-Word
-    if true == self.isStrictBOW then
+    if true == self.isStrictBow then
         self:makeBagOfWord()
     else
         self:makeSumOfWord()

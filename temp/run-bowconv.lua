@@ -14,7 +14,7 @@ inputs = torch.LongTensor(B, M):random(1,V):cuda()
 
 -- the 1d bag-of-word conv module
 m1 = ohnn.OneHotTemporalSeqConvolution(V, C, p,
-    {hasBias = true, vocabPadInd = vocabPadInd, isStrictBOW = true}
+    {hasBias = true, vocabPadInd = vocabPadInd, isStrictBow = true}
 ):cuda()
 -- outputs: the dense tensor. size: B, M-kW+1, C
 outputs1 = m1:forward(inputs)
@@ -25,7 +25,7 @@ m1:backward(inputs, gradOutputs1)
 
 -- the 1d sum-of-word conv module
 m2 = ohnn.OneHotTemporalSeqConvolution(V, C, p,
-    {hasBias = true, vocabPadInd = vocabPadInd, isStrictBOW = false}
+    {hasBias = true, vocabPadInd = vocabPadInd, isStrictBow = false}
 ):cuda()
 -- outputs: the dense tensor. size: B, M-kW+1, C
 outputs2 = m2:forward(inputs)
