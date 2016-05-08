@@ -8,7 +8,7 @@ local C = ohnn.C
 
 -- class def
 function LookupTableExt:__init(...)
-    assert(table.pack(...).n == 2, "currently only supports initialization nn.LookuptTableExt(V, C)")
+    assert(table.pack(...).n == 2, "currently only supports initialization ohnn.LookuptTableExt(V, C)")
     parent.__init(self, ...)
     self.flagUpdateGradInput = false
 end

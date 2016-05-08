@@ -4,7 +4,7 @@ require'ohnn'
 
 V = 30000 + 1 -- vocabulary size
 C = 500
-M = 80 -- seq length
+M = 8 -- seq length
 p = 1
 B = 100 -- #batches
 padVocabInd = 1
@@ -33,8 +33,8 @@ function timing_module(input, m)
     time = torch.tic()
     for i = 1, nloop do
         m:forward(input)
+        cutorch.synchronize()
     end
-    cutorch.synchronize()
     time = torch.toc(time)
     print(torch.type(m) .. ' fprop time ' .. time/nloop)
 
@@ -61,4 +61,4 @@ function calc_diff(a, b)
     return c:abs():max()
 end
 d = calc_diff(output1, output2)
-print( ('diff = %f'):format(d) )
+print( ('diff = %0.9f'):format(d) )

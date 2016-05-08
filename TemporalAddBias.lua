@@ -51,7 +51,7 @@ end
 function TemporalAddBias:accGradParameters(input, gradOutput, scale)
     scale = scale or 1
     local B, M, C = checkInputSize(input)
-    assert(input:isSameSizeAs(gradOutput)) -- B, M, C
+    assert(input:isSameSizeAs(gradOutput), "input and gradOutput are not in the size.") -- B, M, C
 
     self.gradBias:add(scale,
         gradOutput:view(B*M, C):sum(1):view(1,1,C)
