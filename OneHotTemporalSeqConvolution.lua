@@ -25,7 +25,7 @@ function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
         assert(V>0 and C>0 and p >0)
         self.V = V
         self.C = C
-        self.kW = p
+        self.p = p
 
         opt = opt or {}
         self.hasBias = opt.hasBias or false -- default no Bias
@@ -33,17 +33,29 @@ function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
     end
     check_arg()
 
+    -- make the underlying seq model
+    self:makeSeq()
+
+    -- vocabulary index padding
+    self:setVocabIndPad(self.vocabIndPad)
+end
+
+function OneHotTemporalSeqConvolution:makeSeq()
+    local V = self.V
+    local C = self.C
+    local p = self.p
+
     -- submodules: narrow + lookuptable
     local submds = {}
     for i = 1, p do
         local offset = i
         local length = 1 -- set it as (M - kW + 1) at runtime
         submds[i] = nn.Sequential()
-            -- B, M (,V)
-            :add(ohnn.OneHotNarrowExt(V, 2,offset,length))
-            -- B, M-kW+1 (,V)
-            :add(ohnn.LookupTableExt(V,C))
-            -- B, M-kW+1, C
+        -- B, M (,V)
+        :add(ohnn.OneHotNarrowExt(V, 2,offset,length))
+        -- B, M-kW+1 (,V)
+        :add(ohnn.LookupTableExt(V,C))
+        -- B, M-kW+1, C
     end
 
     -- multiplexer: send input to each submodule
@@ -56,13 +68,13 @@ function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
     local inplace = true
     -- B, M (,V)
     self:add(ct)
-    -- {B, M-kW+1, C}, {B, M-kW+1, C}, ...
+    -- {B, M-p+1, C}, {B, M-p+1, C}, ...
     self:add(nn.CAddTable(inplace))
-    -- B, M-kW+1, C
+    -- B, M-p+1, C
     if self.hasBias == true then
         self:add(ohnn.TemporalAddBias(C, inplace))
     end
-    -- B, M-kW+1, C
+    -- B, M-p+1, C
 end
 
 function OneHotTemporalSeqConvolution:updateOutput(input)
@@ -70,8 +82,8 @@ function OneHotTemporalSeqConvolution:updateOutput(input)
 
     -- need to the seq length for current input batch
     local M = input:size(2)
-    assert(M >= self.kW,
-        ("kernel size %d > seq length %d, failed"):format(self.kW, M)
+    assert(M >= self.p,
+        ("kernel size %d > seq length %d, failed"):format(self.p, M)
     )
     self:_reset_seq_length(M)
 
@@ -81,7 +93,7 @@ end
 -- Okay with default backward(), which calls each module's backward()
 
 -- additional methods
-function OneHotTemporalSeqConvolution:setVocabIndPad(pv)
+function OneHotTemporalSeqConvolution:setVocabIndPad(vip)
     self.vocabIndPad = vip
 
     local ms = self:findModules('ohnn.LookupTableExt')
@@ -119,7 +131,7 @@ end
 
 function OneHotTemporalSeqConvolution:__tostring__()
     local s = string.format('%s(%d -> %d, %d',
-        torch.type(self),  self.V, self.C, self.kW)
+        torch.type(self),  self.V, self.C, self.p)
     return s .. ')'
 end
 
