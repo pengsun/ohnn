@@ -11,10 +11,6 @@ function OneHotTemporalConvolution:__init(V, C, p, opt)
     self:setDummyVocabInd(self.dummyVocabInd)
 end
 
-function OneHotTemporalConvolution:makeModel()
-    -- make the concrete model in derived clas
-end
-
 function OneHotTemporalConvolution:checkArg(V, C, p, opt)
     assert(V>0 and C>0 and p >0)
     self.V = V
@@ -27,6 +23,10 @@ function OneHotTemporalConvolution:checkArg(V, C, p, opt)
     self.padEndLen = opt.padEndLen or 0
     self.padIndValue = opt.padIndValue or nil
     self.dummyVocabInd = opt.dummyVocabInd or 0 -- default no dummy vocabular index
+end
+
+function OneHotTemporalConvolution:makeModel()
+    -- make the concrete model in derived clas
 end
 
 function OneHotTemporalConvolution:setDummyVocabInd(dvi)

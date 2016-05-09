@@ -9,6 +9,7 @@ require('ohnn.TemporalAddBias')
 require('ohnn.OneHotTemporalConvolution')
 require('ohnn.OneHotTemporalBowStack')
 require('ohnn.OneHotTemporalBowConvolution')
+require('ohnn.OneHotTemporalSowConvolution')
 require('ohnn.OneHotTemporalSeqConvolution')
 
 return ohnn

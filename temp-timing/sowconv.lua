@@ -6,9 +6,15 @@ require'onehot-temp-conv'
 V = 30000 + 1 -- vocabulary size
 C = 500
 M = 95 -- seq length
-p = 3
+p = 11
 B = 100 -- #batches
-vocabIndPad = 7
+dummyVocabInd = 7
+
+local function get_pad(p)
+    assert(p %2 == 1)
+    return (p -1)/2
+end
+local pad = get_pad(p)
 
 nloop = 3
 
@@ -47,26 +53,21 @@ function timing_module(input, gOutput, m)
 end
 
 -- new
-m1 = ohnn.OneHotTemporalBowConvolution(V, C, p,
-    {hasBias = true, isStrictBow = false}
+m1 = ohnn.OneHotTemporalSowConvolution(V, C, p,
+    {hasBias = true, padBegLen = pad, padEndLen = pad, dummyVocabInd = dummyVocabInd}
 )
 m1:cuda()
-m1:setVocabIndPad(vocabIndPad)
 
 -- old
-local function make_old(V, C, p)
-    local function get_pad()
-        assert(p %2 == 1)
-        return (p -1)/2
-    end
-    local pad = get_pad(p)
+local function make_old()
+
     local stride = 1
 
     --local m = nn.OneHotTemporalConvolution(V, C, 1, {hasBias = false})
     --m:setPadding(vocabIndPad):zeroPaddingWeight()
 
     local m = nn.LookupTable(V, C)
-    m:setPadding(VocabIndPad)
+    m:setPadding(dummyVocabInd)
 
 --    local m = ohnn.LookupTableExt(V, C)
 --    m:setPadding(VocabIndPad)
@@ -81,14 +82,13 @@ local function make_old(V, C, p)
     md:add( nn.MulConstant(p, true) )
     md:add( nn.Squeeze(1, 3) )
     -- B, M, HU
-    md:add( nn.TemporalAddBias(C) )
+    md:add( ohnn.TemporalAddBias(C, true) )
     -- B, M, HU
-
-    md:cuda()
 
     return md
 end
-m2 = make_old(V, C, p)
+m2 = make_old()
+m2:cuda()
 
 -- common weights bias
 local function enforce_param(m1, m2)
@@ -102,6 +102,7 @@ cutorch.synchronize()
 
 -- do the timing
 print('new')
+print(m1)
 timing_module(input, gOutput, m1)
 output1 = m1:forward(input)
 
