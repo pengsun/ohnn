@@ -70,7 +70,8 @@ The option `opt` can have the following fields:
 SOM should have similar performance with BOW for natural word sequence. 
 Also, due to implementation issue, SOW is much faster than BOW. 
 Default true.
-
+`edgeVocabIndPad`: when `isStrictBow = true`, this field must be specified to indicate what vocabulary index is padded at both word-sequence edges. 
+When `isStrictBow = false`, this field is ignored.
 
 ##Reference
 [1] Rie Johnson and Tong Zhang. Effective use of word order for text categorization with convolutional neural networks. NAACL-HLT 2015. 

@@ -29,7 +29,7 @@ function OneHotTemporalSeqConvolution:__init(V, C, p, opt)
 
         opt = opt or {}
         self.hasBias = opt.hasBias or false -- default no Bias
-        self.vocabIndPad = opt.vocabIndPad or 1
+        self.vocabIndPad = opt.vocabIndPad or 0 -- default no vocabular index padding
     end
     check_arg()
 
@@ -109,7 +109,9 @@ function OneHotTemporalSeqConvolution:zeroVocabIndPadWeight()
     assert(#ms > 0)
     for _, m in ipairs(ms) do
         local vocabIndPad = m.paddingValue or error('currupted code... no paddingValue')
-        m.weight:select(1, vocabIndPad):fill(0)
+        if vocabIndPad > 0 then
+            m.weight:select(1, vocabIndPad):fill(0)
+        end
     end
     return self
 end

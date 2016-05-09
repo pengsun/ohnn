@@ -32,8 +32,14 @@ function OneHotTemporalBowConvolution:__init(V, C, p, opt)
 
         opt = opt or {}
         self.hasBias = opt.hasBias or true
-        self.vocabIndPad = opt.vocabIndPad or 1
+        self.vocabIndPad = opt.vocabIndPad or 0
         self.isStrictBow = opt.isStrictBow or false
+        if true == self.isStrictBow then
+            self.edgeVocabIndPad = opt.edgeVocabIndPad or error(
+                "when isStrictBow = true, edgeVocabIndPad must be specified!"
+            )
+        end
+
     end
     check_arg()
 
@@ -49,13 +55,13 @@ function OneHotTemporalBowConvolution:__init(V, C, p, opt)
 end
 
 function OneHotTemporalBowConvolution:makeBagOfWord()
-    local indUnknown = self.vocabIndPad
+    local edgeVocabIndPad = self.edgeVocabIndPad
     local p = self.p
     local V = self.V
     local C = self.C
 
     -- B, M (,V)
-    self:add( ohnn.OneHotTemporalBowStack(p, indUnknown) )
+    self:add( ohnn.OneHotTemporalBowStack(p, edgeVocabIndPad) )
     -- B, Mp (,V)
     self:add( ohnn.LookupTableExt(V, C) )
     -- B, Mp, HU
@@ -67,7 +73,7 @@ function OneHotTemporalBowConvolution:makeBagOfWord()
     self:add( nn.Squeeze(1, 3) )
     -- B, M, HU
     if true == self.hasBias then
-        self:add( ohnn.TemporalAddBias(C) )
+        self:add( ohnn.TemporalAddBias(C, true) )
     end
 
 end
@@ -88,7 +94,7 @@ function OneHotTemporalBowConvolution:makeSumOfWord()
     self:add( nn.Squeeze(1, 3) )
     -- B, M, C
     if true == self.hasBias then
-        self:add( ohnn.TemporalAddBias(C) )
+        self:add( ohnn.TemporalAddBias(C, true) )
     end
     -- B, M, C
 end
@@ -117,7 +123,9 @@ function OneHotTemporalBowConvolution:zeroVocabIndPadWeight()
     assert(#ms > 0)
     for _, m in ipairs(ms) do
         local vocabIndPad = m.paddingValue or error('currupted code... no paddingValue')
-        m.weight:select(1, vocabIndPad):fill(0)
+        if vocabIndPad > 0 then
+            m.weight:select(1, vocabIndPad):fill(0)
+        end
     end
     return self
 end
