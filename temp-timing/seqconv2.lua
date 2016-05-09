@@ -10,6 +10,10 @@ p = 3
 B = 100 -- #batches
 dummyVocabInd = 1
 
+pBeg = 1 -- padding beginning
+pEnd = 3 -- padding end
+Mdd = M + pBeg + pEnd
+
 nloop = 3
 
 -- onehot input
@@ -17,7 +21,7 @@ input = torch.LongTensor(B, M):random(V):cuda()
 weight = torch.CudaTensor(V, C):normal()
 
 -- gradOutput
-gOutput = torch.CudaTensor(B, M-p+1, C):normal()
+gOutput = torch.CudaTensor(B, Mdd-p+1, C):normal()
 
 function timing_module(input, gOutput, m)
     local time
@@ -47,13 +51,35 @@ function timing_module(input, gOutput, m)
 end
 
 -- new
-m1 = ohnn.OneHotTemporalSeqConvolution(V, C, p,
-    {hasBias = true, dummyVocabInd = dummyVocabInd, padIndValue = 1}
+m1 = ohnn.OneHotTemporalSeqConvolution(V, C, p, {hasBias = true,
+        padBegLen = pBeg, padEndLen = pEnd, padIndValue = dummyVocabInd,
+        dummyVocabInd = dummyVocabInd}
 ):cuda()
 
 -- old
-m2 = nn.OneHotTemporalConvolution(V, C, p, {hasBias = true}):cuda()
-m2:setPadding(dummyVocabInd)
+local function create_old()
+    -- pad for input
+    local inputDim = 1
+    local mPadLeft = nn.Padding(1, -pBeg, inputDim, dummyVocabInd)
+    local mPadRight = nn.Padding(1, pEnd, inputDim, dummyVocabInd)
+    -- turn off gradInput for padding module
+    local function null_updateGradInput(self, input, gradOutput)
+        self.gradInput = torch.Tensor():typeAs(gradOutput)
+        return self.gradInput
+    end
+    mPadLeft.updateGradInput = null_updateGradInput
+    mPadRight.updateGradInput = null_updateGradInput
+
+
+    local md = nn.Sequential()
+    md:add( mPadLeft )
+    md:add( mPadRight )
+    md:add( nn.OneHotTemporalConvolution(V, C, p, {hasBias = true}):setPadding(dummyVocabInd) )
+
+    md:cuda()
+    return md
+end
+m2 = create_old()
 
 -- common weights bias
 local function enforce_param(m1, m2)
@@ -72,7 +98,7 @@ timing_module(input, gOutput, m1)
 output1 = m1:forward(input)
 
 print('old')
-print(m2)
+--print(m2)
 timing_module(input, gOutput, m2)
 output2 = m2:forward(input)
 
