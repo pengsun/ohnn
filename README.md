@@ -69,7 +69,7 @@ Construct class for bow-conv [1], which means bag-of-word convolution that can b
 Expect tensor size:
 ```
 input: B, M (,V)
-   kernel: V, C, p
+   kernel: V, C
 output: B, (M+pB+pE)-p+1, C
 ```
 The option `opt` can have the following fields:
@@ -89,7 +89,7 @@ The difference lies in that BOW conv counts duplicate words only one time, while
 Expect tensor size:
 ```
 input: B, M (,V)
-   kernel: V, C, p
+   kernel: V, C
 output: B, (M+pB+pE)-p+1, C
 ```
 The option `opt` can have the following fields:
