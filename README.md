@@ -12,7 +12,9 @@ Hereafter, we use the following notations compatible with `nn.TemporalConvolutio
   M = sequence length = nInputFrame = #words
   V = inputFrameSize = vocabulary size
   C = outputFrameSize = #output feature maps = #hidden units = embedding size
-  kW = convolution kernel size = kernel width
+  p = convolution kernel size = kernel width
+  pB = padding length at sequence beginning
+  pE = padding length at sequence end
 ```
 
 The input data layout for `ohnn` is compatible with that for `nn.LookupTable`, 
@@ -32,6 +34,11 @@ Then the lib will ba installed to your torch 7 directory. Delete the git-cloned 
 
 
 ## Usage
+The following classes are exposed:
+* `ohnn.OneHotTemporalSeqConvolution`: convolution over one-hot word vector sequence.
+* `ohnn.OneHotTemporalBowConvolution`: Bag-of-Word convolution.
+* `ohnn.OneHotTemporalSowConvolution`: Sum-of-Word convolution. 
+
 See TODO for basic examples.
 
 See TODO for examples of text classification using oh-conv.
@@ -41,37 +48,56 @@ See TODO for examples of text classification using oh-conv.
 module = ohnn.OneHotTemporalSeqConvolution(V, C, p [,opt])
 ```
 Construct class for seq-conv [1], which means sequential convolution that is exactly a conventional temporal convolution over high-dimensional one-hot vector sequence. 
-Always reduce the sequence length. Expect tensor size:
+Expect tensor size:
 ```
 input: B, M (,V)
    kernel: V, C, p
-output: B, M-p+1, C
+output: B, (M+pB+pE)-p+1, C
 ```
 The option `opt` can have the following fields:
 `hasBias`: true means there is a bias term. Default true.
-`vocabIndPad`: padding index of the vocabulary for unknown or filling words. Default 1.
-
+`padBegLen`: padding length at sequence beginning. Default 0. 
+`padEndLen`: padding length at sequence end. Default 0. 
+`padIndValue`: padded index value (over the vocabulary) for the padding at sequence beginning and end. Default nil. 
+`dummyVocabInd`: vocabulary index seen as dummy one (e.g., for out-of-vocabulary word). Default nil. 
 
 #### ohnn.OneHotTemporalBowConvolution
 ```lua
 module = ohnn.OneHotTemporalSeqConvolution(V, C, p [,opt])
 ```
 Construct class for bow-conv [1], which means bag-of-word convolution that can be seen as shared-weight linear regression over bag-of-word extracted from local window. 
-`p` must be a even number. Always keep the sequence length. Expect tensor size:
+Expect tensor size:
 ```
 input: B, M (,V)
-   kernel: V, C
-output: B, M, C
+   kernel: V, C, p
+output: B, (M+pB+pE)-p+1, C
 ```
 The option `opt` can have the following fields:
 `hasBias`: true means there is a bias term. Default true.
-`vocabIndPad`: padding index of the vocabulary for unknown or filling words. Default 1.
-`isStrictBow`: true means strict bag-of-word (multiple word occurrence is only counted 1 time), false means sum-of-word (count as many times a word can occur). 
-SOM should have similar performance with BOW for natural word sequence. 
-Also, due to implementation issue, SOW is much faster than BOW. 
-Default true.
-`edgeVocabIndPad`: when `isStrictBow = true`, this field must be specified to indicate what vocabulary index is padded at both word-sequence edges. 
-When `isStrictBow = false`, this field is ignored.
+`padBegLen`: padding length at sequence beginning. Default 0. 
+`padEndLen`: padding length at sequence end. Default 0. 
+`padIndValue`: padded index value (over the vocabulary) for the padding at sequence beginning and end. Default nil. 
+`dummyVocabInd`: vocabulary index seen as dummy one (e.g., for out-of-vocabulary word). Default nil. 
+
+#### ohnn.OneHotTemporalSowConvolution
+```lua
+module = ohnn.OneHotTemporalSeqConvolution(V, C, p [,opt])
+```
+Construct class for sum-of-word (SOW) convolution. 
+SOW conv is much like BOW conv. 
+The difference lies in that BOW conv counts duplicate words only one time, while SOW conv counts as many times as a word can show up.
+Expect tensor size:
+```
+input: B, M (,V)
+   kernel: V, C, p
+output: B, (M+pB+pE)-p+1, C
+```
+The option `opt` can have the following fields:
+`hasBias`: true means there is a bias term. Default true.
+`padBegLen`: padding length at sequence beginning. Default 0. 
+`padEndLen`: padding length at sequence end. MUST equal to `padBegLen`. Default 0. 
+`padIndValue`: padded index value (over the vocabulary) for the padding at sequence beginning and end. Default nil. 
+`dummyVocabInd`: vocabulary index seen as dummy one (e.g., for out-of-vocabulary word). Default nil. 
 
 ##Reference
 [1] Rie Johnson and Tong Zhang. Effective use of word order for text categorization with convolutional neural networks. NAACL-HLT 2015. 
