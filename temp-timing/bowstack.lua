@@ -7,7 +7,7 @@ V = 30000 + 1 -- vocabulary size
 M = 80 -- seq length
 p = 9
 B = 100 -- #batches
-padVocabInd = 1
+padIndValue = 1
 MP = M * p
 
 nloop = 3
@@ -33,7 +33,7 @@ function timing_module(input, m)
 end
 
 -- new one
-m = ohnn.OneHotTemporalBowStack(p, padVocabInd):cuda()
+m = ohnn.OneHotTemporalBowStack(p, 0, 0, padIndValue):cuda()
 print('new one')
 --print(m)
 timing_module(input, m)

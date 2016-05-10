@@ -6,6 +6,8 @@ B = 1
 M = #tmp
 V = tablex.reduce(function (a,b) return (a > b) and a or b end, tmp)
 p = 5
+padBeg = 2
+padEnd = 3
 padVocabInd = 1
 
 -- input
@@ -14,7 +16,8 @@ print('input = ')
 print(input)
 
 -- module
-m = ohnn.OneHotTemporalBowStack(p, padVocabInd):cuda()
+m = ohnn.OneHotTemporalBowStack(p, padBeg, padEnd, padVocabInd):cuda()
+print(m)
 
 -- fprop
 output = m:forward(input)

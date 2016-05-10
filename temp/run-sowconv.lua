@@ -13,9 +13,8 @@ padIndValue = 1 -- the first word in vocabulary is seen as padding word
 -- inputs: the one-hot vector as index in set {1,2,...,V}. size: B, M
 inputs = torch.LongTensor(B, M):random(1,V):cuda()
 
-
 -- the 1d sum-of-word conv module
-m = ohnn.OneHotTemporalBowConvolution(V, C, p,
+m = ohnn.OneHotTemporalSowConvolution(V, C, p,
     {hasBias = true, padBegLen = padBegLen, padEndLen = padEndLen, padIndValue = padIndValue}
 ):cuda()
 -- outputs: the dense tensor. size: B, M-kW+1, C

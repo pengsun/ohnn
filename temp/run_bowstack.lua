@@ -2,6 +2,8 @@ require 'ohnn'
 
 B, M, V, C = 2, 4, 6, 2
 p = 3
+padBegLen = 0
+padEndLen = 0
 padVocabInd = 1
 
 -- input
@@ -13,7 +15,7 @@ print('input = ')
 print(input)
 
 -- module
-m = ohnn.OneHotTemporalBowStack(p, padVocabInd):cuda()
+m = ohnn.OneHotTemporalBowStack(p, padBegLen, padEndLen, padVocabInd):cuda()
 
 -- fprop
 output = m:forward(input)

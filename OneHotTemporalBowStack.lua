@@ -13,18 +13,23 @@ require'cutorch'
 require'nn'
 
 -- main methods
-local OneHotTemporalBowStack, parent = torch.class('ohnn.OneHotTemporalBowStack', 'nn.Module')
+local OneHotTemporalBowStack, parent = torch.class(
+    'ohnn.OneHotTemporalBowStack',
+    'nn.Module')
 local C = ohnn.C
 
-function OneHotTemporalBowStack:__init(p, padVocabInd, opt)
+function OneHotTemporalBowStack:__init(p, padBegLen, padEndLen, padIndValue, opt)
     parent.__init(self)
 
     local function check_arg()
         self.p = p or error('no p: must specify kernel window size')
         assert(self.p >= 1)
 
-        self.padVocabInd = padVocabInd or
-            error('no padVocabInd: must specify a padding vocabulary index')
+        self.padBegLen = padBegLen or error('no padBegLen')
+        self.padEndLen = padEndLen or error('no padEndLen')
+
+        self.padIndValue = padIndValue or
+            error('no padIndValue: must specify a padding vocabulary index')
 
         opt = opt or {}
     end
@@ -40,7 +45,9 @@ function OneHotTemporalBowStack:updateOutput(input)
         -- in
         input:cdata(),
         self.p,
-        self.padVocabInd,
+        self.padBegLen,
+        self.padEndLen,
+        self.padIndValue,
         -- out
         self.output:cdata()
     )
@@ -54,8 +61,8 @@ function OneHotTemporalBowStack:updateGradInput(input, gradOutput)
 end
 
 function OneHotTemporalBowStack:__tostring__()
-    local s = string.format('%s(%d',
-        torch.type(self),  self.p)
-    return s .. ')'
+    local s = string.format('%s(%d) padBegLen=%d padEndLen=%d padIndValue=%d',
+        torch.type(self), self.p, self.padBegLen, self.padEndLen, self.padIndValue)
+    return s
 end
 

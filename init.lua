@@ -1,4 +1,6 @@
-require 'cunn'
+require'nn'
+require'cunn'
+require'cudnn'
 ohnn = {}
 ohnn.C = require 'ohnn.ffi'
 
