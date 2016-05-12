@@ -18,7 +18,7 @@ function OneHotTemporalConvolution:checkArg(V, C, p, opt)
     self.p = p
 
     opt = opt or {}
-    self.hasBias = opt.hasBias or false -- default no Bias
+    self.hasBias = (true == opt.hasBias) and true or false -- default no Bias
     self.padBegLen = opt.padBegLen or 0
     self.padEndLen = opt.padEndLen or 0
     self.padIndValue = opt.padIndValue or nil
