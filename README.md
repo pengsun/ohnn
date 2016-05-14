@@ -2,7 +2,7 @@
 
 Implement the OneHot Temporal Convolution (oh-conv) defined in [1]. 
 For NLP task, it directly applies the convolution over the high-dimensional one-hot word vector sequence.
-This way, pre-trained word embedding is unnecessary [1], although unsupervised learning on un-labeled data can further boost the performance [2, 3].
+This way, pre-trained word embedding is unnecessary [1], although semi-supervised learning with additional un-labeled data can further boost the performance [2, 3].
 This is a re-implementation as Torch 7 `nn` module (See [3] for the original C++/CUDA C code).
 Currently it must work with GPU.
 
