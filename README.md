@@ -39,9 +39,9 @@ The following classes are exposed:
 * `ohnn.OneHotTemporalBowConvolution`: Bag-of-Word convolution.
 * `ohnn.OneHotTemporalSowConvolution`: Sum-of-Word convolution. 
 
-See TODO for basic examples.
+See files in `temp/` for basic examples.
 
-See TODO for examples of text classification using oh-conv.
+See [here](https://bitbucket.org/pengsun000/ohnn-text-cls) for out source examples of text classification using oh-conv.
 
 #### ohnn.OneHotTemporalSeqConvolution
 ```lua
