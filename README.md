@@ -30,18 +30,19 @@ In another word, the input can be understood as a `B, M, V` sized tensor consist
 ## Install
 git clone the code, cd to the directory, and run command ```luarocks make```.
 
-Then the lib will ba installed to your torch 7 directory. Delete the git-cloned source directory if you like.
+Then the lib will be installed to your torch 7 directory. Delete the git-cloned source directory if you like.
 
 
 ## Usage
 The following classes are exposed:
+
 * `ohnn.OneHotTemporalSeqConvolution`: convolution over one-hot word vector sequence.
 * `ohnn.OneHotTemporalBowConvolution`: Bag-of-Word convolution.
 * `ohnn.OneHotTemporalSowConvolution`: Sum-of-Word convolution. 
 
-See files in `temp/` for basic examples.
+See files in folder `temp/` for basic examples.
 
-See [here](https://bitbucket.org/pengsun000/ohnn-text-cls) for out source examples of text classification using oh-conv.
+See [here](https://github.com/pengsun/ohnn-text-cls) for out source examples of text classification using oh-conv.
 
 #### ohnn.OneHotTemporalSeqConvolution
 ```lua
