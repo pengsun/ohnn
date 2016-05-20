@@ -28,9 +28,12 @@ In another word, the input can be understood as a `B, M, V` sized tensor consist
 
 
 ## Install
-git clone the code, cd to the directory, and run command ```luarocks make```.
+git clone the code, cd to the directory, and run command
+```sh
+luarocks make
+```
 
-Then the lib will be installed to your torch 7 directory. Delete the git-cloned source directory if you like.
+Done. The lib will be installed to your torch 7 directory. Delete the git-cloned source directory if you like.
 
 
 ## Usage
