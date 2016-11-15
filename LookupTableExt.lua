@@ -14,27 +14,31 @@ function LookupTableExt:__init(...)
 end
 
 function LookupTableExt:updateOutput(input)
-    if torch.type(input) ~= 'torch.CudaTensor' then -- cpu data
     return parent.updateOutput(self, input)
-    end
-    if (input:dim() == 1) then -- single batch
-    return parent.updateOutput(self, input)
-    end
-
-    assert(input:dim() == 2)
-    input = self:makeInputContiguous(input)
-
-    C.OHNN_CudaLookupTableF_updateOutput(
-        cutorch.getState(),
-        -- in
-        input:cdata(),
-        self.weight:cdata(),
-        -- out
-        self.output:cdata()
-    )
-
-    return self.output
 end
+
+--function LookupTableExt:updateOutput(input)
+--    if torch.type(input) ~= 'torch.CudaTensor' then -- cpu data
+--    return parent.updateOutput(self, input)
+--    end
+--    if (input:dim() == 1) then -- single batch
+--    return parent.updateOutput(self, input)
+--    end
+--
+--    assert(input:dim() == 2)
+--    input = self:makeInputContiguous(input)
+--
+--    C.OHNN_CudaLookupTableF_updateOutput(
+--        cutorch.getState(),
+--        -- in
+--        input:cdata(),
+--        self.weight:cdata(),
+--        -- out
+--        self.output:cdata()
+--    )
+--
+--    return self.output
+--end
 
 function LookupTableExt:updateGradInput(input, gradOutput)
     local function check_size()
